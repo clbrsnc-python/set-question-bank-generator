@@ -1,0 +1,48 @@
+name: Generate SET Question Bank CSV
+
+on:
+  workflow_dispatch:
+    inputs:
+      unit_name:
+        description: 'Unit Name / Subject Title'
+        required: true
+        default: 'Unit_1_Political_Theory'
+      question_count:
+        description: 'Number of Questions to Generate'
+        required: true
+        default: '50'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-generate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run MCQ Generator Script
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          UNIT_NAME: ${{ github.event.inputs.unit_name || 'Unit_1_Political_Theory' }}
+          QUESTION_COUNT: ${{ github.event.inputs.question_count || '50' }}
+        run: |
+          python generate_mcqs.py
+
+      - name: Commit and Push Generated CSV
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Automated generation of SET Question Bank CSV"
+          file_pattern: "outputs/*.csv"
